@@ -5,6 +5,8 @@ projects. It owns the version contract, reproducible source packaging, and the
 reusable GitHub workflow used to create releases consumed by
 [`omzcj/homebrew-omzcj`](https://github.com/omzcj/homebrew-omzcj).
 
+Current release: `v2026.08.29.1`.
+
 The Homebrew tap remains a downstream consumer. Formula and Cask updates,
 livechecks, autobump, and `brew test-bot` stay in that repository.
 
