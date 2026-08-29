@@ -10,6 +10,11 @@ Current release: `v2026.08.29.2`.
 The Homebrew tap remains a downstream consumer. Formula and Cask updates,
 livechecks, autobump, and `brew test-bot` stay in that repository.
 
+The explicit `$release-onboarding` Codex Skill is maintained in the private
+`assassinor/github` workspace repository under `.agents/skills`. This repository
+remains the public source of truth for the executable release policy and shared
+workflow.
+
 ## Release contract
 
 - Canonical versions use `YYYY.MM.DD.N`, without a leading `v`.
