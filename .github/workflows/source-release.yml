@@ -1,0 +1,45 @@
+name: Reusable source release
+
+on:
+  workflow_call:
+    inputs:
+      runner:
+        description: GitHub-hosted runner label
+        required: false
+        default: macos-15-intel
+        type: string
+      project-name:
+        description: Lowercase project name used in the archive
+        required: true
+        type: string
+      version-file:
+        description: File containing the canonical YYYY.MM.DD.N version
+        required: false
+        default: VERSION
+        type: string
+      validate-command:
+        description: Repository command that must pass before packaging
+        required: true
+        type: string
+      package-paths:
+        description: Newline-separated repository-relative paths included in the archive
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ${{ inputs.runner }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Validate, package, and release
+        uses: omzcj/release-ci/actions/source-release@a9d5005ae0fa759b23a22a373d9d2c5f447e9e0d
+        with:
+          project-name: ${{ inputs.project-name }}
+          version-file: ${{ inputs.version-file }}
+          validate-command: ${{ inputs.validate-command }}
+          package-paths: ${{ inputs.package-paths }}

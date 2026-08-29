@@ -1,0 +1,6 @@
+interface:
+  display_name: "Release Onboarding"
+  short_description: "Connect an existing project to shared release automation"
+  default_prompt: "Use $release-onboarding to connect this existing project to omzcj release automation."
+policy:
+  allow_implicit_invocation: false
