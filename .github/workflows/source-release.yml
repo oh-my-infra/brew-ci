@@ -37,7 +37,7 @@ jobs:
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Validate, package, and release
-        uses: omzcj/release-ci/actions/source-release@a9d5005ae0fa759b23a22a373d9d2c5f447e9e0d
+        uses: omzcj/release-ci/actions/source-release@a02106aca8b90941af96d06dc185e5dbd324e0c9
         with:
           project-name: ${{ inputs.project-name }}
           version-file: ${{ inputs.version-file }}
