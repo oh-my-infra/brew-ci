@@ -1,7 +1,11 @@
 name: Source release
-description: Validate CalVer, package reproducible sources, and create a GitHub Release
+description: Validate CalVer, package reproducible sources, and optionally create a GitHub Release
 
 inputs:
+  publish:
+    description: Publish a GitHub Release; false validates and packages twice without publishing
+    required: false
+    default: "true"
   project-name:
     description: Lowercase project name used in the archive
     required: true
@@ -19,74 +23,22 @@ inputs:
 outputs:
   version:
     description: Validated version without the v prefix
-    value: ${{ steps.version.outputs.version }}
+    value: ${{ steps.release.outputs.version }}
   tag:
-    description: Published Git tag
-    value: ${{ steps.version.outputs.tag }}
+    description: Git tag derived from the version (not created in dry-run mode)
+    value: ${{ steps.release.outputs.tag }}
 
 runs:
   using: composite
   steps:
-    - name: Read and validate version
-      id: version
+    - name: Validate, package, and optionally release
+      id: release
       shell: bash
       env:
         GH_TOKEN: ${{ github.token }}
+        PUBLISH: ${{ inputs.publish }}
         VERSION_FILE: ${{ inputs.version-file }}
-      run: |
-        set -euo pipefail
-        version="$(tr -d '[:space:]' < "$VERSION_FILE")"
-        python3 "$GITHUB_ACTION_PATH/../../scripts/validate_version.py" \
-          "$version" --require-today
-        tag="v$version"
-        if gh release view "$tag" >/dev/null 2>&1; then
-          echo "Release $tag already exists; bump $VERSION_FILE first." >&2
-          exit 1
-        fi
-        printf 'version=%s\ntag=%s\n' "$version" "$tag" >> "$GITHUB_OUTPUT"
-
-    - name: Validate project
-      shell: bash
-      env:
         VALIDATE_COMMAND: ${{ inputs.validate-command }}
-      run: bash -euo pipefail -c "$VALIDATE_COMMAND"
-
-    - name: Package reproducible source archive
-      shell: bash
-      env:
+        PROJECT_NAME: ${{ inputs.project-name }}
         PACKAGE_PATHS: ${{ inputs.package-paths }}
-        PROJECT_NAME: ${{ inputs.project-name }}
-        VERSION: ${{ steps.version.outputs.version }}
-      run: |
-        set -euo pipefail
-        paths=()
-        while IFS= read -r path; do
-          [[ -z "$path" ]] || paths+=("$path")
-        done <<< "$PACKAGE_PATHS"
-        if [[ "${#paths[@]}" -eq 0 ]]; then
-          echo "package-paths must contain at least one path" >&2
-          exit 1
-        fi
-        asset="$PROJECT_NAME-$VERSION.tar.gz"
-        python3 "$GITHUB_ACTION_PATH/../../scripts/package_release.py" \
-          --name "$PROJECT_NAME" \
-          --version "$VERSION" \
-          --output "dist/$asset" \
-          "${paths[@]}"
-        (cd dist && shasum -a 256 "$asset" > "$asset.sha256")
-
-    - name: Create GitHub Release
-      shell: bash
-      env:
-        GH_TOKEN: ${{ github.token }}
-        PROJECT_NAME: ${{ inputs.project-name }}
-        VERSION: ${{ steps.version.outputs.version }}
-        TAG: ${{ steps.version.outputs.tag }}
-      run: |
-        set -euo pipefail
-        asset="$PROJECT_NAME-$VERSION.tar.gz"
-        gh release create "$TAG" \
-          "dist/$asset" "dist/$asset.sha256" \
-          --target "$GITHUB_SHA" \
-          --title "$VERSION" \
-          --generate-notes
+      run: bash "$GITHUB_ACTION_PATH/../../scripts/source_release.sh"
