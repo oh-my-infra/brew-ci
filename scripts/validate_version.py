@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the canonical omzcj calendar version contract."""
+"""Validate the canonical brew-ci calendar version contract."""
 
 from __future__ import annotations
 
