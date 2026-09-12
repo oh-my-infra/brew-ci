@@ -3,6 +3,11 @@ name: Reusable source release
 on:
   workflow_call:
     inputs:
+      publish:
+        description: Publish a release; false builds and verifies reproducible archives only
+        required: false
+        default: true
+        type: boolean
       runner:
         description: GitHub-hosted runner label
         required: false
@@ -37,8 +42,9 @@ jobs:
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Validate, package, and release
-        uses: omzcj/release-ci/actions/source-release@a02106aca8b90941af96d06dc185e5dbd324e0c9
+        uses: oh-my-infra/brew-ci/actions/source-release@0b11f5ae802de434bcfaa097f91c9790a810e056
         with:
+          publish: ${{ inputs.publish }}
           project-name: ${{ inputs.project-name }}
           version-file: ${{ inputs.version-file }}
           validate-command: ${{ inputs.validate-command }}
