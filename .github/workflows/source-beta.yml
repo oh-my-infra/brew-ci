@@ -82,5 +82,5 @@ jobs:
           PROJECT_NAME: ${{ inputs.project-name }}
           PACKAGE_PATHS: ${{ inputs.package-paths }}
           BETA_NUMBER: ${{ inputs.beta-number }}
-          GITHUB_SHA: ${{ inputs.source-ref }}
+          SOURCE_COMMIT: ${{ inputs.source-ref }}
         run: bash ../automation/scripts/source_beta.sh
