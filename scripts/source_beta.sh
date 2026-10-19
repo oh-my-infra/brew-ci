@@ -7,7 +7,12 @@ set -euo pipefail
 : "${PACKAGE_PATHS:?PACKAGE_PATHS is required}"
 : "${BETA_NUMBER:?BETA_NUMBER is required}"
 : "${GITHUB_OUTPUT:?GITHUB_OUTPUT is required}"
-: "${GITHUB_SHA:?GITHUB_SHA is required}"
+: "${SOURCE_COMMIT:?SOURCE_COMMIT is required}"
+
+[[ "$SOURCE_COMMIT" =~ ^[0-9a-f]{40}$ ]] || {
+  echo 'source-commit must be exactly 40 lowercase hexadecimal characters' >&2
+  exit 1
+}
 
 [[ "$BETA_NUMBER" =~ ^[1-9][0-9]*$ ]] || {
   echo 'beta-number must be a non-zero-padded positive integer' >&2
@@ -54,5 +59,5 @@ cmp "dist/$asset" "$repeat_dir/$asset"
 printf 'sha256=%s\n' "$candidate_sha256" >> "$GITHUB_OUTPUT"
 
 gh release create "$tag" "dist/$asset" "dist/$asset.sha256" \
-  --target "$GITHUB_SHA" --title "$version beta $BETA_NUMBER" --prerelease \
-  --notes "Candidate built from $GITHUB_SHA. Promote only after explicit user approval."
+  --target "$SOURCE_COMMIT" --title "$version beta $BETA_NUMBER" --prerelease \
+  --notes "Candidate built from $SOURCE_COMMIT. Promote only after explicit user approval."

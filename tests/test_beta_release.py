@@ -51,7 +51,8 @@ class BetaReleaseTests(unittest.TestCase):
             "PACKAGE_PATHS": "VERSION\nsrc",
             "BETA_NUMBER": "1",
             "GITHUB_OUTPUT": str(self.root / "outputs"),
-            "GITHUB_SHA": "a" * 40,
+            "SOURCE_COMMIT": "a" * 40,
+            "GITHUB_SHA": "b" * 40,
         }
 
     def test_beta_is_prerelease_and_archive_is_reproducible(self) -> None:
@@ -66,6 +67,7 @@ class BetaReleaseTests(unittest.TestCase):
         self.assertIn(f"release create {tag} ", calls[2])
         self.assertIn(" --prerelease ", calls[2])
         self.assertIn("--target " + "a" * 40, calls[2])
+        self.assertNotIn("b" * 40, calls[2])
         self.assertTrue((self.root / f"dist/example-{self.version}.tar.gz").is_file())
         self.assertEqual(
             (self.root / "outputs").read_text(),
@@ -85,6 +87,16 @@ class BetaReleaseTests(unittest.TestCase):
         )
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("beta-number", result.stderr)
+        self.assertFalse(self.calls.exists())
+
+    def test_source_commit_must_be_an_explicit_full_sha(self) -> None:
+        result = subprocess.run(
+            ["/bin/bash", str(BETA_SCRIPT)], cwd=self.root,
+            env={**self.env, "SOURCE_COMMIT": "main"}, text=True, capture_output=True,
+            check=False,
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("source-commit", result.stderr)
         self.assertFalse(self.calls.exists())
 
 
