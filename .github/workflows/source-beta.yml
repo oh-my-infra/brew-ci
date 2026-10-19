@@ -1,0 +1,86 @@
+name: Reusable source beta
+
+on:
+  workflow_call:
+    outputs:
+      version:
+        description: Canonical payload version
+        value: ${{ jobs.beta.outputs.version }}
+      tag:
+        description: Immutable beta tag
+        value: ${{ jobs.beta.outputs.tag }}
+      sha256:
+        description: SHA-256 that must be approved for promotion
+        value: ${{ jobs.beta.outputs.sha256 }}
+    inputs:
+      automation-ref:
+        description: Immutable brew-ci commit containing this workflow and its scripts
+        required: true
+        type: string
+      source-ref:
+        description: Exact 40-character caller commit to package
+        required: true
+        type: string
+      beta-number:
+        description: Positive candidate number for this stable version
+        required: true
+        type: string
+      runner:
+        required: false
+        default: macos-15-intel
+        type: string
+      project-name:
+        required: true
+        type: string
+      version-file:
+        required: false
+        default: VERSION
+        type: string
+      validate-command:
+        required: true
+        type: string
+      package-paths:
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  beta:
+    runs-on: ${{ inputs.runner }}
+    outputs:
+      version: ${{ steps.publish.outputs.version }}
+      tag: ${{ steps.publish.outputs.tag }}
+      sha256: ${{ steps.publish.outputs.sha256 }}
+    steps:
+      - name: Validate immutable inputs
+        env:
+          AUTOMATION_REF: ${{ inputs.automation-ref }}
+          SOURCE_REF: ${{ inputs.source-ref }}
+        run: |
+          [[ "$AUTOMATION_REF" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$SOURCE_REF" =~ ^[0-9a-f]{40}$ ]]
+      - name: Check out candidate source
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ inputs.source-ref }}
+          path: source
+      - name: Check out release automation
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          repository: oh-my-infra/brew-ci
+          ref: ${{ inputs.automation-ref }}
+          path: automation
+      - name: Validate, package, and publish candidate
+        id: publish
+        working-directory: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION_FILE: ${{ inputs.version-file }}
+          VALIDATE_COMMAND: ${{ inputs.validate-command }}
+          PROJECT_NAME: ${{ inputs.project-name }}
+          PACKAGE_PATHS: ${{ inputs.package-paths }}
+          BETA_NUMBER: ${{ inputs.beta-number }}
+          GITHUB_SHA: ${{ inputs.source-ref }}
+        run: bash ../automation/scripts/source_beta.sh

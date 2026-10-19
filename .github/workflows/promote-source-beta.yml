@@ -1,0 +1,67 @@
+name: Reusable source beta promotion
+
+on:
+  workflow_call:
+    outputs:
+      version:
+        value: ${{ jobs.promote.outputs.version }}
+      tag:
+        value: ${{ jobs.promote.outputs.tag }}
+      sha256:
+        value: ${{ jobs.promote.outputs.sha256 }}
+    inputs:
+      automation-ref:
+        description: Immutable brew-ci commit containing this workflow and its scripts
+        required: true
+        type: string
+      beta-tag:
+        description: User-approved immutable candidate tag
+        required: true
+        type: string
+      expected-sha256:
+        description: User-approved SHA-256 for the candidate archive
+        required: true
+        type: string
+      runner:
+        required: false
+        default: macos-15-intel
+        type: string
+      project-name:
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ${{ inputs.runner }}
+    outputs:
+      version: ${{ steps.promote.outputs.version }}
+      tag: ${{ steps.promote.outputs.tag }}
+      sha256: ${{ steps.promote.outputs.sha256 }}
+    steps:
+      - name: Validate immutable automation reference
+        env:
+          AUTOMATION_REF: ${{ inputs.automation-ref }}
+        run: '[[ "$AUTOMATION_REF" =~ ^[0-9a-f]{40}$ ]]'
+      - name: Check out default branch history
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+          path: source
+      - name: Check out release automation
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          repository: oh-my-infra/brew-ci
+          ref: ${{ inputs.automation-ref }}
+          path: automation
+      - name: Verify and promote the approved candidate assets
+        id: promote
+        working-directory: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PROJECT_NAME: ${{ inputs.project-name }}
+          BETA_TAG: ${{ inputs.beta-tag }}
+          EXPECTED_SHA256: ${{ inputs.expected-sha256 }}
+        run: bash ../automation/scripts/promote_source_beta.sh
