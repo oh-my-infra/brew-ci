@@ -10,6 +10,31 @@ Current release: `v2026.09.12.1`.
 The Homebrew tap remains a downstream consumer. Formula and Cask updates,
 livechecks, autobump, and `brew test-bot` stay in that repository.
 
+## Candidate beta and promotion
+
+`source-beta.yml` packages an exact caller commit as an immutable prerelease
+`vVERSION-beta.N`. It runs the caller's validation command, builds the archive
+twice, and publishes only when both byte streams match. The archive keeps the
+canonical stable `VERSION`; the beta suffix identifies the candidate Release,
+not a different payload version. Its workflow outputs the immutable tag and
+archive SHA-256; both values form the approval identity passed to promotion.
+
+`promote-source-beta.yml` accepts only an explicitly selected beta tag and the
+SHA-256 recorded when that candidate was approved. It reads the repository's
+default branch through the GitHub API, fetches its current remote head, and
+requires the candidate commit to be its ancestor. It downloads the candidate
+archive and checksum, verifies their names, candidate checksum, approved
+digest, paths and embedded `VERSION`, then attaches those exact bytes to `vVERSION`.
+Promotion never rebuilds or replaces an existing stable Release.
+
+Both reusable workflows require `automation-ref`, the same immutable brew-ci
+commit used after `@` in the caller. This lets the workflow check out its helper
+scripts without using a moving branch. A new brew-ci release therefore has to
+be published before a product can pin and adopt these workflows.
+
+Beta Releases must be marked prerelease. GitHub `releases/latest`, Homebrew
+livecheck and normal stable updaters continue to see only stable Releases.
+
 The explicit `$release-onboarding` Codex Skill is maintained in the private
 `assassinor/github` workspace repository under `.agents/skills`. This repository
 remains the public source of truth for the executable release policy and shared
