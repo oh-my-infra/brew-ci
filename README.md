@@ -18,6 +18,10 @@ twice, and publishes only when both byte streams match. The archive keeps the
 canonical stable `VERSION`; the beta suffix identifies the candidate Release,
 not a different payload version. Its workflow outputs the immutable tag and
 archive SHA-256; both values form the approval identity passed to promotion.
+By default the CalVer date must equal the current date in Asia/Shanghai. A
+caller resuming an already verified candidate after midnight may pass the
+candidate's exact `release-date` (`YYYY-MM-DD`); that value must match the date
+embedded in `VERSION`, so the exception remains explicit and auditable.
 
 `promote-source-beta.yml` accepts only an explicitly selected beta tag and the
 SHA-256 recorded when that candidate was approved. It reads the repository's

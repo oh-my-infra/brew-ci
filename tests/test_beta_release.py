@@ -89,6 +89,31 @@ class BetaReleaseTests(unittest.TestCase):
         self.assertIn("beta-number", result.stderr)
         self.assertFalse(self.calls.exists())
 
+    def test_explicit_release_date_resumes_verified_candidate(self) -> None:
+        historical_version = "2026.10.19.1"
+        (self.root / "VERSION").write_text(historical_version + "\n")
+        result = subprocess.run(
+            ["/bin/bash", str(BETA_SCRIPT)], cwd=self.root,
+            env={**self.env, "RELEASE_DATE": "2026-10-19"},
+            text=True, capture_output=True, check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn(
+            f"release create v{historical_version}-beta.1 ",
+            self.calls.read_text(),
+        )
+
+    def test_explicit_release_date_must_match_version(self) -> None:
+        (self.root / "VERSION").write_text("2026.10.19.1\n")
+        result = subprocess.run(
+            ["/bin/bash", str(BETA_SCRIPT)], cwd=self.root,
+            env={**self.env, "RELEASE_DATE": "2026-10-20"},
+            text=True, capture_output=True, check=False,
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("does not match release date", result.stderr)
+        self.assertFalse(self.calls.exists())
+
     def test_source_commit_must_be_an_explicit_full_sha(self) -> None:
         result = subprocess.run(
             ["/bin/bash", str(BETA_SCRIPT)], cwd=self.root,

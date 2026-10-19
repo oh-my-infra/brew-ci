@@ -25,6 +25,11 @@ on:
         description: Positive candidate number for this stable version
         required: true
         type: string
+      release-date:
+        description: Explicit YYYY-MM-DD date for resuming a verified candidate after midnight; empty requires today
+        required: false
+        default: ''
+        type: string
       runner:
         required: false
         default: macos-15-intel
@@ -83,4 +88,5 @@ jobs:
           PACKAGE_PATHS: ${{ inputs.package-paths }}
           BETA_NUMBER: ${{ inputs.beta-number }}
           SOURCE_COMMIT: ${{ inputs.source-ref }}
+          RELEASE_DATE: ${{ inputs.release-date }}
         run: bash ../automation/scripts/source_beta.sh

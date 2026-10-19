@@ -21,7 +21,11 @@ set -euo pipefail
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 version="$(tr -d '[:space:]' < "$VERSION_FILE")"
-python3 "$script_dir/validate_version.py" "$version" --require-today
+if [[ -n "${RELEASE_DATE:-}" ]]; then
+  python3 "$script_dir/validate_version.py" "$version" --today "$RELEASE_DATE"
+else
+  python3 "$script_dir/validate_version.py" "$version" --require-today
+fi
 tag="v$version-beta.$BETA_NUMBER"
 
 if gh release view "$tag" >/dev/null 2>&1; then

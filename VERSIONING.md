@@ -35,6 +35,9 @@ exception. External Formulae retain their upstream version schemes.
 - A release workflow validates the version before packaging. Verification with
   `publish: false` accepts an existing valid version without requiring today's
   date, packages twice, and never creates tags or releases.
+- Beta packaging requires today's date by default. A previously verified
+  candidate resumed after midnight may explicitly supply its original release
+  date, which must exactly match the date embedded in `VERSION`.
 - Tags and releases are never overwritten, renamed, or moved.
 - Assets use deterministic names containing the project and full version.
 - Homebrew consumes the exact published version and immutable asset checksum.
