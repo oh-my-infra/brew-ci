@@ -35,10 +35,10 @@ be published before a product can pin and adopt these workflows.
 Beta Releases must be marked prerelease. GitHub `releases/latest`, Homebrew
 livecheck and normal stable updaters continue to see only stable Releases.
 
-The explicit `$release-onboarding` Codex Skill is maintained in the private
-`assassinor/github` workspace repository under `.agents/skills`. This repository
-remains the public source of truth for the executable release policy and shared
-workflow.
+Maintenance starts with [AGENTS.md](AGENTS.md), this README and
+[VERSIONING.md](VERSIONING.md). The retired private `assassinor/github`
+workspace is not required; this repository owns the executable release policy
+and shared workflows.
 
 ## Release contract
 
@@ -128,3 +128,16 @@ historical workflows with the old repository name is not supported.
 
 Shared automation releases use annotated, signed `vYYYY.MM.DD.N` tags. Keep the
 workflow SHA and its independently pinned implementation action SHA immutable.
+
+## Local maintenance checks
+
+See [AGENTS.md](AGENTS.md) for maintenance and release boundaries. The local
+checks used by `.github/workflows/ci.yml` are:
+
+```sh
+python3 -m unittest discover -s tests -v
+bash -n scripts/source_release.sh scripts/source_beta.sh scripts/promote_source_beta.sh
+git diff --check
+```
+
+These checks do not require publishing a product or creating a release tag.
