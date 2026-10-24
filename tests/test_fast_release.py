@@ -111,4 +111,40 @@ class FastReleaseTests(unittest.TestCase):
         self.assertEqual(api.call_count,2)
 
 
+    @patch.object(m, 'write_state')
+    @patch.object(m, 'get_file', return_value=b'2026.10.21.1\n')
+    @patch.object(m, 'state', return_value=None)
+    @patch.object(m, 'api')
+    @patch.dict(os.environ, {'GITHUB_REPOSITORY':'oh-my-brew/omcli','GITHUB_ACTOR':'writer','GITHUB_RUN_ID':'100','PRODUCT':'omcli'})
+    def test_prepare_creates_independent_pr_without_rewriting_source(self, api, state, get_file, write_state):
+        source='a'*40; candidate='b'*40
+        api.side_effect=[{'default_branch':'main'},{'permission':'write'},[{'name':'dev'}],
+            {'object':{'sha':'c'*40}},[],{},None,{'object':{'sha':source}},
+            {'sha':'blob','content':base64.b64encode(b'old').decode()},
+            {'commit':{'sha':candidate}},{'tree':{'sha':'tree'}},{'number':7,'html_url':'https://example/pr/7'}]
+        with tempfile.TemporaryDirectory() as temp:
+            event=Path(temp)/'event.json';event.write_text(json.dumps({'inputs':{'source_ref':source}}))
+            with patch.dict(os.environ,{'GITHUB_EVENT_PATH':str(event)}):
+                result=m.prepare()
+        self.assertEqual(result['candidate'],candidate)
+        self.assertEqual(result['pr'],7)
+        self.assertTrue(any(c.args[:2]==('pulls','POST') for c in api.call_args_list))
+        self.assertFalse(any(c.args[0].startswith('git/refs/heads/') and len(c.args)>1 and c.args[1]=='PATCH' for c in api.call_args_list))
+        write_state.assert_called_once()
+
+    @patch.object(m, 'current')
+    @patch.object(m, 'api')
+    @patch.object(m, 'run')
+    def test_merged_tree_substitution_stops_before_tag_or_release(self, run, api, current):
+        with tempfile.TemporaryDirectory() as temp:
+            directory=Path(temp);meta,_=self.payload(directory)
+            api.side_effect=[{'prerelease':True,'draft':False},
+                {'head':{'sha':meta['candidate']},'merged':True,'merge_commit_sha':'merged'},
+                {'tree':{'sha':'wrong-tree'}}]
+            with self.assertRaisesRegex(ValueError,'Merged tree differs'):
+                m.promote(meta,directory)
+        self.assertEqual(run.call_count,1)
+        self.assertEqual(run.call_args.args[:3],('gh','release','download'))
+
+
 if __name__ == '__main__':unittest.main()
