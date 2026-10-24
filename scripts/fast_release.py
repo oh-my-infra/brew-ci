@@ -24,7 +24,7 @@ def run(*args, cwd=None):
 
 
 def api(path, method='GET', data=None, missing=False):
-    args = ['gh', 'api', f'repos/{os.environ["GITHUB_REPOSITORY"]}/{path}', '--method', method]
+    args = ['gh', 'api', f'repos/{os.environ["GITHUB_REPOSITORY"]}' + (f'/{path}' if path else ''), '--method', method]
     if data is not None:
         args += ['--input', '-']
     result = subprocess.run(args, input=json.dumps(data) if data is not None else None, text=True, capture_output=True)
