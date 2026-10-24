@@ -127,6 +127,10 @@ def prepare():
         'body': f'Automatic candidate from source `{source}`. Candidate `{candidate}`.\nBeta builds immediately; checks run in parallel. The same artifact promotes automatically.\nRun: https://github.com/{os.environ["GITHUB_REPOSITORY"]}/actions/runs/{run_id}'})
     meta = {'product': product, 'version': version, 'source': source, 'source_pr': source_pr['number'] if source_pr else None, 'candidate': candidate, 'tree': tree, 'base': base, 'default': default, 'branch': branch, 'pr': pr['number'], 'run_id': run_id, 'beta_tag': f'v{version}-beta.{run_id}', 'stable_tag': f'v{version}', 'phase': 'preparing'}
     write_state(meta)
+    if previous and previous.get('phase') != 'released':
+        old_pr = api(f'pulls/{previous["pr"]}')
+        if old_pr['state'] == 'open' and old_pr['head']['sha'] == previous['candidate'] and old_pr['head']['ref'].startswith('release/auto-'):
+            api(f'pulls/{previous["pr"]}', 'PATCH', {'state': 'closed'})
     print(f'Candidate PR: {pr["html_url"]}')
     return meta
 

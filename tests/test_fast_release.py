@@ -14,6 +14,7 @@ m = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(m)
 
 
+@patch.dict(os.environ, {'GITHUB_REPOSITORY':'oh-my-brew/omcli'})
 class FastReleaseTests(unittest.TestCase):
     def meta(self):
         return {'product': 'omcli', 'version': '2026.10.25.1', 'candidate': 'a'*40, 'tree': 'b'*40,
