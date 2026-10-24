@@ -19,9 +19,12 @@ version, which makes upgrades ambiguous.
 
 ## Apple applications
 
-Apple application marketing versions remain three components:
-`YYYY.MM.DD`. Their Git tags and published artifact versions use
-`vYYYY.MM.DD.N`; Apple build numbers remain independent monotonic integers.
+App Store/TestFlight application marketing versions use three components,
+`YYYY.MM.DD`; Git tags and published artifacts use `vYYYY.MM.DD.N`, with
+independent monotonic Apple build numbers. Direct-distributed miniTools retains
+its complete four-component `YYYY.MM.DD.N` display version and an independent
+Sparkle build identity as specified in its DISTRIBUTION.md. Do not apply the
+App Store display-version rule to all macOS applications.
 
 ## Upstream-derived packages
 

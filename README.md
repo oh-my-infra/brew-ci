@@ -10,7 +10,15 @@ Current release: `v2026.09.12.1`.
 The Homebrew tap remains a downstream consumer. Formula and Cask updates,
 livechecks, autobump, and `brew test-bot` stay in that repository.
 
-## Candidate beta and promotion
+## Choose an interface
+
+- `scripts/fast_release.py`: opted-in candidate-first automation for omcli and miniTools. Packaging and checks run in parallel; passing required checks permits automatic promotion without human approval. See [automatic releases](#candidate-first-automatic-releases).
+- `source-beta.yml` and `promote-source-beta.yml`: existing caller-selected candidate/digest contract, retained for callers using that API.
+- `source-release.yml`: existing direct source-release interface; its example below is not the automatic product release trigger.
+
+A contract describes its own interface only. Do not apply legacy approval or signed-tag requirements to the opt-in coordinator, or silently migrate other callers.
+
+## Explicit candidate beta and promotion (legacy interface)
 
 `source-beta.yml` packages an exact caller commit as an immutable prerelease
 `vVERSION-beta.N`. It runs the caller's validation command, builds the archive
@@ -36,9 +44,7 @@ Beta Releases must be marked prerelease. GitHub `releases/latest`, Homebrew
 livecheck and normal stable updaters continue to see only stable Releases.
 
 Maintenance starts with [AGENTS.md](AGENTS.md), this README and
-[VERSIONING.md](VERSIONING.md). The retired private `assassinor/github`
-workspace is not required; this repository owns the executable release policy
-and shared workflows.
+[VERSIONING.md](VERSIONING.md). This repository owns the shared release contracts.
 
 ## Release contract
 
@@ -126,7 +132,7 @@ changing only the caller's owner while keeping an old workflow SHA is not
 sufficient. Historical tags and releases remain unchanged, and rerunning
 historical workflows with the old repository name is not supported.
 
-Shared automation releases use annotated, signed `vYYYY.MM.DD.N` tags. Keep the
+The brew-ci repository’s own automation releases use annotated, signed `vYYYY.MM.DD.N` tags. Opt-in product tags follow the automatic coordinator contract below. Keep the
 workflow SHA and its independently pinned implementation action SHA immutable.
 
 ## Local maintenance checks
