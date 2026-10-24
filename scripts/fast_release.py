@@ -49,7 +49,7 @@ def current(meta, existing=None):
     require(active is not None and active['run_id'] == meta['run_id'] and active['candidate'] == meta['candidate'], 'Superseded candidate; no publication permitted')
     if meta.get('source_pr'):
         pr = api(f'pulls/{meta["source_pr"]}')
-        require(pr['state'] == 'open' and pr['head']['sha'] == meta['source'], 'Source PR changed or closed; candidate superseded')
+        require((pr['state'] == 'open' or pr.get('merged')) and pr['head']['sha'] == meta['candidate'], 'Source PR changed or closed; candidate superseded')
     return active
 
 
@@ -87,8 +87,14 @@ def prepare():
     else:
         source = event['inputs']['source_ref']
         require(re.fullmatch('[0-9a-f]{40}', source), 'source_ref must be an exact commit')
-        branches = api(f'commits/{source}/branches-where-head')
-        require(branches, 'Manual source must be the head of a branch in this repository')
+        matches = [p for p in api(f'commits/{source}/pulls') if p['state'] == 'open' and not p['draft'] and p['head']['sha'] == source and p['head']['repo']['full_name'] == os.environ['GITHUB_REPOSITORY'] and p['base']['ref'] == default]
+        # Failed-job reruns keep their original source even after the version append.
+        prior = state()
+        if prior and prior['run_id'] == int(os.environ['GITHUB_RUN_ID']):
+            current(prior)
+            return prior
+        require(len(matches) == 1, 'Manual source must identify exactly one ready same-repository open PR')
+        source_pr = matches[0]
     base = api(f'git/ref/heads/{default}')['object']['sha']
     run_id = int(os.environ['GITHUB_RUN_ID'])
     previous = state()
@@ -124,7 +130,10 @@ def prepare():
     result = api(f'contents/{version_file}', 'PUT', {'message': f'Release {product} {version}', 'branch': branch, 'sha': old['sha'], 'content': base64.b64encode(raw).decode()})
     candidate = result['commit']['sha']
     tree = api(f'git/commits/{candidate}')['tree']['sha']
-    pr = api('pulls', 'POST', {'title': f'Release {product} {version}', 'head': branch, 'base': default, 'body': f'Automatic candidate from source `{source}`. Candidate `{candidate}`.\nBeta is built immediately; checks run in parallel and the same artifact is promoted automatically.\nRun: https://github.com/{os.environ["GITHUB_REPOSITORY"]}/actions/runs/{run_id}'})
+    pr = api(f'pulls/{source_pr["number"]}')
+    require(pr['state'] == 'open' and pr['head']['sha'] == source, 'Developer PR changed during candidate preparation')
+    # Ordinary fast-forward only. A concurrent developer push makes this fail safely.
+    api(f'git/refs/heads/{pr["head"]["ref"]}', 'PATCH', {'sha': candidate, 'force': False})
     meta = {'product': product, 'version': version, 'source': source, 'source_pr': source_pr['number'] if source_pr else None, 'candidate': candidate, 'tree': tree, 'base': base, 'default': default, 'branch': branch, 'pr': pr['number'], 'run_id': run_id, 'beta_tag': f'v{version}-beta.{run_id}', 'stable_tag': f'v{version}', 'phase': 'preparing'}
     write_state(meta)
     print(f'Candidate PR: {pr["html_url"]}')
@@ -229,9 +238,6 @@ def promote(meta, directory):
     if meta['product'] == 'miniTools':
         files.append(str(directory / 'appcast.xml'))
     run('gh', 'release', 'create', tag, *files, '--repo', os.environ['GITHUB_REPOSITORY'], '--verify-tag', '--latest', '--title', f'{meta["product"]} {meta["version"]}', '--notes', f'Automatically promoted from {meta["beta_tag"]}.\nCandidate: {meta["candidate"]}\nMerged commit: {merged_sha}\nSHA-256: {payload["sha256"]}\nSame artifact; no rebuild, re-signing or re-notarization.')
-    # The source PR is redundant after the exact source was included via the candidate PR.
-    if meta.get('source_pr'):
-        api(f'pulls/{meta["source_pr"]}', 'PATCH', {'state': 'closed'})
     write_state(dict(meta, phase='released', merged=merged_sha, sha256=payload['sha256']))
     print(f'RELEASED {tag} {payload["sha256"]}')
 

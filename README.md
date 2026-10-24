@@ -145,8 +145,8 @@ These checks do not require publishing a product or creating a release tag.
 ## Candidate-first automatic releases
 
 `scripts/fast_release.py` is an opt-in coordinator used by omcli and miniTools.
-Trusted default-branch workflows prepare an isolated version candidate PR from a
-same-repository writer's requested source. Packaging and quality checks run in
+Trusted default-branch workflows prepare an isolated version candidate from a
+same-repository writer's requested source and fast-forward its existing development PR. No Actions-created PR or organization policy relaxation is required. Packaging and quality checks run in
 parallel; Beta publication does not wait for tests. Successful checks permit a
 protected squash merge and promotion of the downloaded Beta bytes, never a rebuild.
 The merged Git tree must equal the tested candidate tree.

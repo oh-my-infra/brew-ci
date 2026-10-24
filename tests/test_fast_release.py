@@ -44,7 +44,7 @@ class FastReleaseTests(unittest.TestCase):
     @patch.object(m, 'api')
     def test_source_pr_update_or_closure_invalidates(self, api):
         meta = dict(self.meta(), source_pr=1)
-        for pr in [{'state':'open','head':{'sha':'new'}}, {'state':'closed','head':{'sha':meta['source']}}]:
+        for pr in [{'state':'open','head':{'sha':'new'}}, {'state':'closed','head':{'sha':meta['candidate']},'merged':False}]:
             api.return_value = pr
             with self.assertRaisesRegex(ValueError, 'Source PR changed'):
                 m.current(meta, meta)
