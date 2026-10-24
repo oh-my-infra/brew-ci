@@ -141,3 +141,25 @@ git diff --check
 ```
 
 These checks do not require publishing a product or creating a release tag.
+
+## Candidate-first automatic releases
+
+`scripts/fast_release.py` is an opt-in coordinator used by omcli and miniTools.
+Trusted default-branch workflows prepare an isolated version candidate PR from a
+same-repository writer's requested source. Packaging and quality checks run in
+parallel; Beta publication does not wait for tests. Successful checks permit a
+protected squash merge and promotion of the downloaded Beta bytes, never a rebuild.
+The merged Git tree must equal the tested candidate tree.
+
+A serialized `release-state` branch reserves versions and records the latest
+candidate. Source PR changes and newer registered candidates invalidate old
+publication. Preparation, Beta feed writes, and final promotion share a publication
+lock; compute jobs remain parallel. Every candidate has an immutable manifest,
+commit, tree, run identity and SHA-256. Reruns retain the same identity.
+
+Callers retain their required branch checks and Apple signing/notarization policy.
+Automatic Git tags use a dedicated per-repository SSH signing secret and a public
+allowed-signers file pinned in trusted default-branch code. This verifies the tag
+cryptographically without copying a user's personal signing key or requiring
+account-wide signing-key administration. Existing release workflows are unchanged
+for callers that have not opted in. Tests use isolated fixtures and mocked APIs.
