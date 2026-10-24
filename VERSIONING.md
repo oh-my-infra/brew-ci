@@ -46,3 +46,11 @@ exception. External Formulae retain their upstream version schemes.
 Historical versions without `.N` and historical semantic versions remain
 valid records. Projects adopt this policy with a new compliant release; no
 history rewrite is required.
+
+## Candidate-first opt-in
+
+Automatic candidates reserve a new date revision before building, including
+unpublished/superseded candidates. GitHub run IDs identify immutable Beta attempts.
+The formal Git tag targets the protected squash-merge commit whose Git tree is
+identical to the tested candidate; the manifest preserves both source identities.
+A successful automated validation replaces human approval only for opted-in callers.
